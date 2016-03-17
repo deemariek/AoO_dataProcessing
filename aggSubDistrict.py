@@ -1,15 +1,17 @@
 import os
 import pandas as pd
-#import xlrd
-#from collections import Counter
 pd.core.format.header_style = None
 import csv
 import operator
 
-# update filenames for each month's appropriate folder 
-fileIn = 'AoO_Round7_Nov2015_Dataset_NonAnonymised.xlsx'
-fileSheet = 'AoO_Round7_Nov2015_Dataset_NonA'
-fileOut = 'AoO_Round7_Nov2015_subdistrictAgg.csv'
+roundNumber = '10'
+monthYear = 'Feb2016'
+monthYearLong = 'February2016'
+
+# filenames for each month's appropriate folder 
+fileIn = 'C:\\REACH\\SYR\\Projects\\13BVJ_AoO\\Activities\\Round{0}_{1}\\Data Collection\\AoO_Round{0}_R\\AoO_Round{0}_{2}_Dataset_FINAL.xlsx'.format(roundNumber, monthYearLong, monthYear)
+fileSheet = 'AoO_Round{0}_{1}_Dataset'.format(roundNumber, monthYear)
+fileOut = 'C:\\REACH\\SYR\\Projects\\13BVJ_AoO\\Activities\\Round{0}_{1}\\Factsheets_governorates\\Table_Database\\AoO_Round{0}_subdistrictAgg.csv'.format(roundNumber, monthYearLong)
 
 # update each month according to the questions required for the factsheet
 aggregateQuestions = ['Displacement/QB001_num_Pre_conf_popul_remained_last_day_pre_m',
@@ -23,7 +25,7 @@ aggregateQuestions = ['Displacement/QB001_num_Pre_conf_popul_remained_last_day_p
 aggregate_Questions = ['Displacement_QB001', 'Health_QE017', 'NFI_QD002', 'WASH_QF006', 'Shelter_QC001', 'Education_QI001']
 
 # responses that shouldn't be included in aggregations
-noResponse = ['No IDPs', 'No information', 'No concensus', 'No IDPs last winter', 'NA']
+noResponse = ['No information', 'No consensus']
 
 # ################################################
 
@@ -62,6 +64,10 @@ def aggregateToSubDistrict(fileIn, fileSheet):
                    # get the question from the current subdistrict for the current aggQ
                    question = row[aggQ]
                    confidence = row['Conf_'+aggQ]
+                   try: 
+                     confidence = int(confidence)
+                   except ValueError:
+                     confidence = 0
                    # append values to list
                    responseList.append(str(question))
                    #confidenceResponse.append(str(confidence))
@@ -74,15 +80,19 @@ def aggregateToSubDistrict(fileIn, fileSheet):
                            resConfs[question].append(confidence)
                    else:
                         pass
+
            # only one response - therefore no need to aggregate
            if len(responseList) == 1:
                 # check if it's a value we want to include or not
-                if responseList[0] in noResponse:
-                    modeResponse = modeResponse + "{0},".format('NA')
-                else: 
-                    modeResponse = modeResponse + "{0},".format(responseList[0])
+                # if responseList[0] in noResponse:
+                #     modeResponse = modeResponse + "{0},".format('NA')
+                # else: 
+                modeResponse = modeResponse + "{0},".format(responseList[0])
            # we need to aggregate if there are more two responses for one subdistrict
            elif len(responseList) > 1:
+                # if sub == 'SY140001':
+                #   print responseList
+                #   print resConfs
                 # check there are responses for that subdistrict
                 if resConfs:
                     maxConfs = {}
@@ -93,8 +103,12 @@ def aggregateToSubDistrict(fileIn, fileSheet):
                             maxConfs[key] = [sumValue]
                         else:
                             maxConfs[key].append(sumValue)
+
                     # get max value from confidence sums
                     maxValue = max(maxConfs.iteritems(), key=operator.itemgetter(1))[1]
+                    # if sub == 'SY140001':
+                    #   print maxValue
+                    #   print 
                     # a list that will contain the final aggregated value for each subdistrict
                     keys = []
                     for key, values in maxConfs.iteritems():
@@ -107,10 +121,10 @@ def aggregateToSubDistrict(fileIn, fileSheet):
                         modeResponse = modeResponse + "{0},".format(keyStr)
                     # return NC (No Concensus) if there are more than two equal options returned 
                     elif len(keys) > 2:
-                        modeResponse = modeResponse + "{0},".format("NC")
-                # if there are no responses, write 'NA' modeResponse
+                        modeResponse = modeResponse + "{0},".format("No consensus")
+                #if there are no responses, write 'NA' modeResponse
                 else:
-                    modeResponse = modeResponse + "{0},".format('NA')
+                    modeResponse = modeResponse + "{0},".format('No information')
            else:
                 pass
        # the aggregated values for each aggregateQuestion are appended to allResponses after processing each subdistrict

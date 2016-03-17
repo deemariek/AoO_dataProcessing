@@ -2,27 +2,28 @@ import os
 import datetime
 from openpyxl import load_workbook, cell
 
-countryCodes = ['IRQ', 'JOR', 'LBN', 'TUR']
-filePath = 'C:\\REACH\\SYR\\Projects\\13BVJ_AoO\\Activities\\Round7_November2015\\Data Collection\\AoO_Round7_Data\\AoO_Round7_datacleaning'
 
+months = {1: 'Jan',  2: 'Feb',   3: 'Mar',   4: 'Apr',
+          5: 'May',  6: 'June',  7: 'July',  8: 'Aug',
+          9: 'Sep', 10: 'Oct',  11: 'Nov',  12: 'Dec'}
+
+# every month update these values to reflect the file names
+studyMonth = months[2]
+roundNumber = '10'
+
+countryCodes = ['IRQ', 'JOR', 'LBN', 'TUR']
+filePath = '..\\AoO_Round{0}_Data\\dataCleaning'.format(roundNumber)  
+baseFileName = '{0}_KI_Village_Level_Monitoring_Tool_{1}16.xlsx'  
+outputFile = '{0}_KI_Village_Level_Monitoring_Tool_{1}16_coded.csv'
 ## maybe pull the xlsx files from this folder directly as opposed to assuming their naming conventions.
 
-months = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr',
-          5: 'May', 6: 'June', 7: 'July', 8: 'Aug',
-          9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
-
-# automatically generate the study month's name from the months' dict
-now = datetime.datetime.now()
-thisMonth = now.month
-prevMonth = thisMonth-1
-studyMonth = months[prevMonth]
-
+# #########################################################################
 
 def addCountryCodeColumn(studyMonth, countryCodes):
     print "Appending country code to files"
     for country in countryCodes:
         try:         
-            fileName = '{0}_KI_Village_Level_Monitoring_Tool_{1}_final.xlsx'.format(country, studyMonth)
+            fileName = baseFileName.format(country, studyMonth)
             fullFilePath = os.path.join(filePath, fileName)
             if os.path.isfile(fullFilePath):
                 workbook = load_workbook(fullFilePath)
@@ -37,7 +38,7 @@ def addCountryCodeColumn(studyMonth, countryCodes):
                 print 'Processing file for {0}'.format(country)
                 for rowNum in range(1, highestRow):
                     worksheet.cell(row=rowNum, column=countryCol).value = country
-                workbook.save(os.path.join(filePath, '{0}_KI_Village_Level_Monitoring_Tool_{1}_Final_coded.xlsx'.format(country, studyMonth)))
+                workbook.save(os.path.join(filePath, outputFile.format(country, studyMonth)))
                 print 'Worksheet for {0} in {1} updated and saved.'.format(country, studyMonth)
             else:
                 print 'Error - File for {0} in {1} not found.'.format(country, studyMonth)
