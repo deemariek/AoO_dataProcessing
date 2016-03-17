@@ -3,16 +3,23 @@ import pandas as pd
 import xlrd
 import csv
 import numpy as np
-##pd.core.format.header_style = None
+
+pd.core.format.header_style = None
+
+roundNumber = '10'
+monthYear = 'Feb2016'
 
 # update these file paths every month
-filePath = "C:\\REACH\\SYR\\Projects\\13BVJ_AoO\\Activities\\Round7_November2015\\Data Collection\\AoO_Round7_Data\\AoO_Round7_datacleaning"
-fileIn = "AoO_Round7_Nov2015_Dataset_Merged_v5_outliers.xlsx"
+dataFilePath = "..\\AoO_Round{0}_Data\\dataCleaning".format(roundNumber)
+outlierFilePath = "..\\AoO_Round{0}_Data\\outliers".format(roundNumber)
+fileIn = "AoO_Round{0}_{1}_Dataset_Merged.xlsx".format(roundNumber, monthYear)
 
 # csv file containing columns names that have numeric responses
-# update this each month in accordance with the master indicator list
+# update this each month in accordance with JOR_KI_Village_Level_Monitoring_Tool_[month] from KOBO
 # eventually the aim would be to have the script automatically detect numeric responses
-numericCols = "AoO_Round7_numericColumns.csv"
+numericCols = "AoO_Round{0}_numericColumns.csv".format(roundNumber)
+
+outputOutliers = 'AoO_Round{0}_{1}Outliers.txt'
 
 # dicts to receive outliers for each country
 jorDict = {}
@@ -28,8 +35,9 @@ class countryOutliers:
         self.outliers = outliers
 
     def writeToFile(self):
-        with open(os.path.join(filePath, '{0}Outliers.txt'.format(self.area)), 'w') as outlierFile:
+        with open(os.path.join(outlierFilePath, outputOutliers.format(roundNumber, self.area)), 'w') as outlierFile:
             outlierFile.writelines("{0} outliers\n\n".format(self.area))
+            
             for key, values in sorted(self.outliers.iteritems()):
                 outlierFile.writelines("{0}\n".format(key))
                 for value in values:
@@ -39,9 +47,9 @@ class countryOutliers:
 
 # #############################################
 
-def csvFiletoList(filePath, fileName):
+def csvFiletoList(fileName):
     rowdata = []
-    with open(os.path.join(filePath, fileName), 'r') as colFile:     
+    with open(fileName, 'r') as colFile:     
         reader = csv.reader(colFile)
         for row in reader:
             rowdata.append((row))
@@ -53,19 +61,19 @@ def detectOutliers(numericQs):
     try:
         print "Trying to load dataset..."
         dfIn = pd.DataFrame()
-        dataIn = pd.read_excel((os.path.join(filePath, fileIn)), 'ALL_KI_Village_Level_Monitoring')
+        dataIn = pd.read_excel((os.path.join(dataFilePath, fileIn)), 'All_KI_Village_Level_Monitoring')
         dfIn = dfIn.append(dataIn)
         print "Dataset loaded"
-        colList = []                # empty array to receive column headings from the loaded questions
         rows = dfIn.shape[0]        # get the number of rows in the dataset
+        colList = []                # empty array to receive column headings from the loaded questions
         for nQ in numericQs:        # appending numeric questions to colList array
             colList.append(nQ)
-        print "Iterating through {0} columns and isolating numeric columns...".format(len(colList))
+        print "Iterating through {0} numeric columns.".format(len(colList))
         for cL in colList:
             col = cL[0]
+            # get statistics for each numeric column
             stats = dfIn[col].describe(percentiles=[.25, .75, .98])
             outliers = 0
-            #print stats
             outlier98 = stats.loc['98%']    # returns numpy.float64
             outlierMax = stats.loc['max']   # returns numpy.float64
             q1 = stats.loc['25%']           # returns numpy.float64
@@ -77,8 +85,10 @@ def detectOutliers(numericQs):
 
             for y in range(rows):
                 cellValue = dfIn.iloc[y][col]
+                if cellValue >= maxFence:
                 #if cellValue <= outlierMax and cellValue >= outlier98:
-                if cellValue <= outlierMax and cellValue >= maxFence:    
+                #if (cellValue <= minFence) or (cellValue >= maxFence):    
+                #if cellValue <= minFence:   
                     value = "Participant ID {0} is an outlier: {1}".format(dfIn.iloc[y]['Basic/Participant_no'], cellValue) 
                     if cellValue <= outlierMax and cellValue >= outlier98:
                         if dfIn.iloc[y]['Country'] == "JOR":  
@@ -115,8 +125,8 @@ def detectOutliers(numericQs):
         Lebanon = countryOutliers("Lebanon", lbnDict)
         Lebanon.writeToFile()
 
-        Iraq = countryOutliers("Iraq", irqDict)
-        Iraq.writeToFile()  
+        KRI = countryOutliers("KRI", irqDict)
+        KRI.writeToFile()  
 
         print "Outlier processing complete"
     except Exception, e:
@@ -125,7 +135,7 @@ def detectOutliers(numericQs):
 # #############################################
 
 # reads numeric columns from a csv file
-numericQuestions = csvFiletoList(filePath, numericCols)
+numericQuestions = csvFiletoList(numericCols)
 
 # generates outliers for each column and writes them to a file
 runOutliers = detectOutliers(numericQuestions)
