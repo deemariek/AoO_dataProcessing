@@ -3,18 +3,27 @@ import pandas as pd
 import csv
 import operator
 import numpy as np
-from StringIO import StringIO
 # this makes the header style not bold
 pd.core.format.header_style = None
 
-dirPath = "C:\\REACH\\SYR\\Projects\\13BVJ_AoO\\Activities\\Round10_February2016\\Data Collection\\AoO_Round10_Python"
 
-AoO_inputDataset = os.path.join(dirPath,'AoO_Round10_Feb2016_Dataset_Merged.xlsx')
-dataSheet = 'All_KI_Village_Level_Monitoring'
+roundNumber = '12'
+monthYear = 'Apr2016'
+monthYearLong = 'April2016'
 
-AoO_geoOutput = os.path.join(dirPath,'AoO_Round10_Feb2016_Dataset_Merged_Geo.xlsx')
+# filenames for each month's appropriate dataset and sheet name
+fileName = 'AoO_Round{0}_{1}_Dataset_Merged_pcodes.xlsx'.format(roundNumber, monthYear)
+fileSheet = 'All_KI_Village_Level_Monitoring'
 
-# Geo data - pcodes
+fileIn = 'C:\\REACH\\SYR\\Projects\\13BVJ_AoO\\Activities\\Round{0}_{1}\\Data Collection\\AoO_Round{0}_Data\\dataCleaning\\{2}'.format(roundNumber, monthYearLong, fileName)
+
+# declare the output filename and directory path
+fileNameGeo = 'AoO_Round{0}_{1}_Dataset_Merged_Placenames.xlsx'.format(roundNumber, monthYear)
+fileOut = 'C:\\REACH\\SYR\\Projects\\13BVJ_AoO\\Activities\\Round{0}_{1}\\Data Collection\\AoO_Round{0}_Data\\dataCleaning\\{2}'.format(roundNumber, monthYearLong, fileNameGeo)
+
+# filepath for where the SYRadmin file is
+dirPath = "C:\\REACH\\SYR\\Projects\\13BVJ_AoO\\Activities\\Round{0}_{1}\\Data Collection\\AoO_Round{0}_Python".format(roundNumber, monthYearLong)
+# Geo data - the SYRadmin file contains the pcodes and placenames for Syria
 geoData = os.path.join(dirPath,'SYRadmin.xlsx')
 
 # ########################################################
@@ -34,7 +43,7 @@ def insertGeoData(inputFile):
 
     # load AoO dataFrame
     df = pd.DataFrame()
-    data = pd.read_excel(inputFile, dataSheet)
+    data = pd.read_excel(inputFile, fileSheet)
     df = df.append(data) 
     print "{0} loaded".format(inputFile)
 
@@ -69,10 +78,10 @@ def insertGeoData(inputFile):
             print "Error processing geodata for {0}".format(p)
 
     # save the non-duplicates dataframe
-    with pd.ExcelWriter(AoO_geoOutput) as writer:
+    with pd.ExcelWriter(fileOut) as writer:
         df.to_excel(writer, sheet_name='dataset_Geo', index=True)
     
-    print "Saved file {0} with geo data".format(AoO_geoOutput)
+    print "Saved file {0} with geo data".format(fileNameGeo)
 
 
 
@@ -81,4 +90,4 @@ def insertGeoData(inputFile):
 
 
 # update the dataFrame to have the GEO data according to its pcode and SYRadmin file
-addGeoData = insertGeoData(AoO_inputDataset)
+addGeoData = insertGeoData(fileIn)
