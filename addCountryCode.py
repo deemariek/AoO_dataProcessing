@@ -8,14 +8,14 @@ months = {1: 'Jan',  2: 'Feb',   3: 'Mar',   4: 'Apr',
           9: 'Sep', 10: 'Oct',  11: 'Nov',  12: 'Dec'}
 
 # every month update these values to reflect the file names
-studyMonth = months[2]
-roundNumber = '10'
+studyMonth = months[4]
+roundNumber = '12'
 
 countryCodes = ['IRQ', 'JOR', 'LBN', 'TUR']
-filePath = '..\\AoO_Round{0}_Data\\dataCleaning'.format(roundNumber)  
-baseFileName = '{0}_KI_Village_Level_Monitoring_Tool_{1}16.xlsx'  
+filePath = '..\\AoO_Round{0}_Data\\dataCleaning'.format(roundNumber)   
+baseFileName = '{0}_KI_Village_Level_Monitoring_Tool_{1}16.xlsx'
 outputFile = '{0}_KI_Village_Level_Monitoring_Tool_{1}16_coded.csv'
-## maybe pull the xlsx files from this folder directly as opposed to assuming their naming conventions.
+## maybe pull the xlsx files from this folder directly as opposed to assuming their naming conventions
 
 # #########################################################################
 

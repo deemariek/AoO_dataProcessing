@@ -4,28 +4,36 @@ pd.core.format.header_style = None
 import csv
 import operator
 
-roundNumber = '10'
-monthYear = 'Feb2016'
-monthYearLong = 'February2016'
+"""
+this script produces a csv file with a records of each  
+Syrian subdistrict and AoO aggregated data for certain questions
+"""
 
-# filenames for each month's appropriate folder 
-fileIn = 'C:\\REACH\\SYR\\Projects\\13BVJ_AoO\\Activities\\Round{0}_{1}\\Data Collection\\AoO_Round{0}_R\\AoO_Round{0}_{2}_Dataset_FINAL.xlsx'.format(roundNumber, monthYearLong, monthYear)
+roundNumber = '12'
+monthYear = 'Apr2016'
+monthYearLong = 'April2016'
+
+# filenames for each month's appropriate dataset and sheet name
+fileName = 'AoO_Round{0}_{1}_Dataset.xlsx'.format(roundNumber, monthYear)
 fileSheet = 'AoO_Round{0}_{1}_Dataset'.format(roundNumber, monthYear)
-fileOut = 'C:\\REACH\\SYR\\Projects\\13BVJ_AoO\\Activities\\Round{0}_{1}\\Factsheets_governorates\\Table_Database\\AoO_Round{0}_subdistrictAgg.csv'.format(roundNumber, monthYearLong)
+
+fileIn = 'C:\\REACH\\SYR\\Projects\\13BVJ_AoO\\Activities\\Round{0}_{1}\\Data Collection\\AoO_Script_structure_latest\\AoO_Round12_R_DK_v2\\data_output\\{2}'.format(roundNumber, monthYearLong, fileName)
+fileOut = 'C:\\REACH\\SYR\\Projects\\13BVJ_AoO\\Activities\\Round{0}_{1}\\Factsheets_governorates\\Table_Database\\AoO_Round{0}_subdistrictAgg1.csv'.format(roundNumber, monthYearLong)
 
 # update each month according to the questions required for the factsheet
-aggregateQuestions = ['Displacement/QB001_num_Pre_conf_popul_remained_last_day_pre_m',
+aggregateQuestions = [
+                      'Displacement/QB001_num_Pre_conf_popul_remained_last_day_prev_month',
                       'Health/QE017_Where_women_delivered_babies',
-                      'NFI/QD002_source_electricity_used_most_hours_pre_m',
-                      'WASH/QF006_most_way_people_disposed_garbage_pre_m',
-                      'Shelter/G_QC001/QC001_most_type_of_housing_this_village_pre_m',
-                      'Education/G_QI001/QI001_Primary_school_available_pre_m']
+                      'NFI/QD002_source_electricity_used_most_hours_prev_month',
+                      'WASH/QF006_most_way_people_disposed_garbage_prev_month',
+                      'Shelter/G_QC001/QC001_most_type_of_housing_this_village_prev_month',
+                      'Education/G_QI001/QI001_Primary_school_available_prev_month']
 
 # remove the aggQuestions string so that it's a bit more user friendly
-aggregate_Questions = ['Displacement_QB001', 'Health_QE017', 'NFI_QD002', 'WASH_QF006', 'Shelter_QC001', 'Education_QI001']
+aggregate_Questions = [ 'Displacement_QB001', 'Health_QE017', 'NFI_QD002', 'WASH_QF006', 'Shelter_QC001', 'Education_QI001']
 
 # responses that shouldn't be included in aggregations
-noResponse = ['No information', 'No consensus']
+noResponse = ['No information', 'No consensus', 'No concensus']
 
 # ################################################
 
@@ -53,8 +61,8 @@ def aggregateToSubDistrict(fileIn, fileSheet):
        modeResponse = "{0},{1},".format(sub, subCounts[sub])
        # iterate through each of the questions of interest and get SD questions and confidence responses
        for aggQ in aggregateQuestions:
+           # a list to contain SD responses
            responseList = []
-           #confidenceResponse = []
            # a dict to contain SD question and conf responses
            resConfs = {}
            # start to iterate through the dataframe rows
@@ -68,36 +76,30 @@ def aggregateToSubDistrict(fileIn, fileSheet):
                      confidence = int(confidence)
                    except ValueError:
                      confidence = 0
-                   # append values to list
+                   # append values to list - used below to decide if we need to aggregate or not 
                    responseList.append(str(question))
-                   #confidenceResponse.append(str(confidence))
                    # only include responses on which we want to aggregate
                    if question not in noResponse:
-                       # add to dict, add value to key if key already there
+                       # add to dict, add conf value to question key if key already there
                        if question not in resConfs:
                            resConfs[question] = [confidence]
                        else:
                            resConfs[question].append(confidence)
                    else:
                         pass
-
+           ## aggregation starts here             
            # only one response - therefore no need to aggregate
            if len(responseList) == 1:
-                # check if it's a value we want to include or not
-                # if responseList[0] in noResponse:
-                #     modeResponse = modeResponse + "{0},".format('NA')
-                # else: 
+                # add the response to the modeResponse variable
                 modeResponse = modeResponse + "{0},".format(responseList[0])
            # we need to aggregate if there are more two responses for one subdistrict
            elif len(responseList) > 1:
-                # if sub == 'SY140001':
-                #   print responseList
-                #   print resConfs
-                # check there are responses for that subdistrict
+                # check there are responses for that subdistrict, this is just an extra check
                 if resConfs:
+                    # a dict to contain response and the sum of their confidences
                     maxConfs = {}
-                    # create new dict with questions and sum of confidences
                     for key, values in resConfs.iteritems():
+                        # get the sum of the values (confidences) for each key (response)
                         sumValue = sum(values)
                         if key not in maxConfs:
                             maxConfs[key] = [sumValue]
@@ -106,9 +108,6 @@ def aggregateToSubDistrict(fileIn, fileSheet):
 
                     # get max value from confidence sums
                     maxValue = max(maxConfs.iteritems(), key=operator.itemgetter(1))[1]
-                    # if sub == 'SY140001':
-                    #   print maxValue
-                    #   print 
                     # a list that will contain the final aggregated value for each subdistrict
                     keys = []
                     for key, values in maxConfs.iteritems():
